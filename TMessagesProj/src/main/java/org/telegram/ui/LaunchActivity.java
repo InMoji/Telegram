@@ -17,6 +17,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -50,32 +51,33 @@ import android.widget.Toast;
 import com.inmoji.sdk.InMojiSDK;
 import com.inmoji.sdk.InMojiSDKBase;
 
-import org.telegram.messenger.AndroidUtilities;
 import org.telegram.PhoneFormat.PhoneFormat;
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
+import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageLoader;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NativeCrashManager;
+import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.query.StickersQuery;
-import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.FileLog;
-import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.R;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.RequestDelegate;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.messenger.UserConfig;
-import org.telegram.ui.Adapters.DrawerLayoutAdapter;
 import org.telegram.ui.ActionBar.ActionBarLayout;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.DrawerLayoutContainer;
+import org.telegram.ui.Adapters.DrawerLayoutAdapter;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.PasscodeView;
 
@@ -152,20 +154,6 @@ public class LaunchActivity extends FragmentActivity implements ActionBarLayout.
         getWindow().setBackgroundDrawableResource(R.drawable.transparent);
 
         super.onCreate(savedInstanceState);
-
-        // Pass as much demographic data as possible for the best integration
-        InMojiSDK.init(getApplicationContext(),
-                "NMGwefDS4bAitdZ4ILxzPpHccamWoqQkynyML3zu",
-                "Nbm72XlPWuNEv7q9WFVG1DsgNevvdCkFjr4WZEcgmSbQsXIHDjRSnPf0fvgec1wd6A2mR7vMMYdATije",
-                InMojiSDK.InmojiLaunchMode.senderReceiver,      //launch mode
-                null, null,                                     //overrides for country and language
-                false, 0, 0,                                    //overrides for location lat and lng
-                null,                                           //custom ImageLoader implementation or null (if null you must compile with the InMojiAndroidSDK.aar that includes our internal image loader)
-                new InMojiSDKBase.SDKTypeface("sans-serif"),    //override typeface used in internal SDK UI.
-                true,                                           // Debug
-                "FirstName", "LastName", "email@foo.com",
-                "555-555-5555", "userAccount123456", 21, "male",
-                "race", "employed", "50000", true, true);
 
         if (UserConfig.passcodeHash.length() != 0 && UserConfig.appLocked) {
             UserConfig.lastPauseTime = ConnectionsManager.getInstance().getCurrentTime();
@@ -383,8 +371,11 @@ public class LaunchActivity extends FragmentActivity implements ActionBarLayout.
             NotificationCenter.getInstance().addObserver(this, NotificationCenter.screenStateChanged);
         }
 
+        boolean initializeInmojiSDKHere = true;
+
         if (actionBarLayout.fragmentsStack.isEmpty()) {
             if (!UserConfig.isClientActivated()) {
+                initializeInmojiSDKHere = false;
                 actionBarLayout.addFragmentToStack(new LoginActivity());
                 drawerLayoutContainer.setAllowOpenDrawer(false, false);
             } else {
@@ -470,6 +461,10 @@ public class LaunchActivity extends FragmentActivity implements ActionBarLayout.
             drawerLayoutContainer.setAllowOpenDrawer(allowOpen, false);
         }
 
+        if(initializeInmojiSDKHere) {
+            initInmojiSDK(getApplicationContext());
+        }
+
         handleIntent(getIntent(), false, savedInstanceState != null, false);
         needLayout();
 
@@ -484,6 +479,39 @@ public class LaunchActivity extends FragmentActivity implements ActionBarLayout.
                 }
             }
         });
+    }
+
+    protected static void initInmojiSDK(Context applicationContext) {
+        //Initialize Inmoji here after login occurs
+        TLRPC.User user = UserConfig.getCurrentUser();
+        String userId = "unknown";
+        String userPhone = "unknown";
+        String userRace = "unknown";
+        String userName = "unknown";
+        String userFirstName = "unknown";
+        String userLastName = "unknown";
+        if(user != null) {
+            userId = String.valueOf(user.id);
+            userPhone = user.phone;
+            userRace = user.bot ? "bot" : "human";
+            userName = user.username;
+            userFirstName = user.first_name;
+            userLastName = user.last_name;
+        }
+        // Pass as much demographic data as possible for the best integration
+        InMojiSDK.init(applicationContext,
+                BuildVars.INMOJI_API_KEY,
+                BuildVars.INMOJI_API_SECRET,
+                InMojiSDK.InmojiLaunchMode.senderReceiver,      //launch mode
+                null, null,                                     //overrides for country and language
+                false, 0, 0,                                    //overrides for location lat and lng
+                null,                                           //custom ImageLoader implementation or null (if null you must compile with the InMojiAndroidSDK.aar that includes our internal image loader)
+                new InMojiSDKBase.SDKTypeface("sans-serif"),    //override typeface used in internal SDK UI.
+                BuildVars.INMOJI_DEBUG,                         // Debug flag
+                userFirstName, userLastName, userName,
+                userPhone, userId, 0, "unknown",
+                userRace, "unknown", "0", false, false);
+
     }
 
     private void showPasscodeActivity() {

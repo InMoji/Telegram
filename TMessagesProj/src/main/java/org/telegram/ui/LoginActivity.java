@@ -1515,6 +1515,8 @@ public class LoginActivity extends BaseFragment {
                                 MessagesController.getInstance().putUser(res.user, false);
                                 ContactsController.getInstance().checkAppAccount();
                                 MessagesController.getInstance().getBlockedUsers(true);
+                                //delayed init of Inmoji SDK until user login
+                                LaunchActivity.initInmojiSDK(getParentActivity().getApplicationContext());
                                 needFinishActivity();
                             } else {
                                 lastError = error.text;
