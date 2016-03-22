@@ -6,6 +6,10 @@
  * Copyright Nikolai Kudashov, 2013-2016.
  */
 
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content.
+ */
+
 package org.telegram.messenger;
 
 import android.graphics.Paint;
@@ -19,6 +23,8 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.style.URLSpan;
 import android.text.util.Linkify;
+
+import com.inmoji.sdk.InmojiSpannableFactory;
 
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
@@ -750,7 +756,7 @@ public class MessageObject {
         if (linkDescription != null) {
             return;
         }
-        if (messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && messageOwner.media.webpage instanceof TLRPC.TL_webPage && messageOwner.media.webpage.description != null) {
+        if (messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && messageOwner.media.webpage instanceof TLRPC.TL_webPage && messageOwner.media.webpage.description != null && messageOwner.media.webpage.shouldRenderPreview()) {
             linkDescription = Spannable.Factory.getInstance().newSpannable(messageOwner.media.webpage.description);
             if (containsUrls(linkDescription)) {
                 try {
@@ -936,7 +942,8 @@ public class MessageObject {
         StaticLayout textLayout;
 
         try {
-            textLayout = new StaticLayout(messageText, textPaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+            InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(messageText, 30, null, true);
+            textLayout = new StaticLayout(inmojiSpannable, textPaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
         } catch (Exception e) {
             FileLog.e("tmessages", e);
             return;
@@ -967,7 +974,8 @@ public class MessageObject {
                 block.charactersOffset = startCharacter;
                 try {
                     CharSequence str = messageText.subSequence(startCharacter, endCharacter);
-                    block.textLayout = new StaticLayout(str, textPaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+                    InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(str, 30, null, true);
+                    block.textLayout = new StaticLayout(inmojiSpannable, textPaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                     block.textYOffset = textLayout.getLineTop(linesOffset);
                     if (a != 0) {
                         block.height = (int) (block.textYOffset - prevOffset);

@@ -6,6 +6,10 @@
  * Copyright Nikolai Kudashov, 2013-2016.
  */
 
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
+
 package org.telegram.ui.Cells;
 
 import android.annotation.SuppressLint;
@@ -23,6 +27,8 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+
+import com.inmoji.sdk.InmojiSpannableFactory;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Emoji;
@@ -175,7 +181,8 @@ public class AboutLinkCell extends FrameLayout {
     @SuppressLint("DrawAllocation")
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        textLayout = new StaticLayout(stringBuilder, textPaint, MeasureSpec.getSize(widthMeasureSpec) - AndroidUtilities.dp(71 + 16), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+        InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(stringBuilder, 30, this, true);
+        textLayout = new StaticLayout(inmojiSpannable, textPaint, MeasureSpec.getSize(widthMeasureSpec) - AndroidUtilities.dp(71 + 16), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
         super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(textLayout.getHeight() + AndroidUtilities.dp(16), MeasureSpec.EXACTLY));
     }
 

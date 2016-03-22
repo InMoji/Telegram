@@ -5,6 +5,9 @@
  *
  * Copyright Nikolai Kudashov, 2013-2016.
  */
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
 
 package org.telegram.ui.Cells;
 
@@ -21,18 +24,20 @@ import android.text.style.URLSpan;
 import android.view.MotionEvent;
 import android.view.SoundEffectConstants;
 
+import com.inmoji.sdk.InmojiSpannableFactory;
+
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.ImageReceiver;
-import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
-import org.telegram.tgnet.TLRPC;
+import org.telegram.messenger.ImageReceiver;
+import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.UserConfig;
+import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.ResourceLoader;
 import org.telegram.ui.PhotoViewer;
-import org.telegram.ui.Components.AvatarDrawable;
 
 public class ChatActionCell extends BaseCell {
 
@@ -224,7 +229,8 @@ public class ChatActionCell extends BaseCell {
         if (width != previousWidth) {
             previousWidth = width;
             int maxWidth = width - AndroidUtilities.dp(30);
-            textLayout = new StaticLayout(currentMessageObject.messageText, textPaint, maxWidth, Layout.Alignment.ALIGN_CENTER, 1.0f, 0.0f, false);
+            InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(currentMessageObject.messageText, 30, this, true);
+            textLayout = new StaticLayout(inmojiSpannable, textPaint, width - AndroidUtilities.dp(30), Layout.Alignment.ALIGN_CENTER, 1.0f, 0.0f, false);
             textHeight = 0;
             textWidth = 0;
             try {

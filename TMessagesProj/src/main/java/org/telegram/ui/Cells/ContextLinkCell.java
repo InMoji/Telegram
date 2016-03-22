@@ -5,6 +5,9 @@
  *
  * Copyright Nikolai Kudashov, 2013-2016.
  */
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
 
 package org.telegram.ui.Cells;
 
@@ -147,7 +150,7 @@ public class ContextLinkCell extends View implements MediaController.FileDownloa
 
             if (result.description != null) {
                 try {
-                    descriptionLayout = ChatMessageCell.generateStaticLayout(result.description, descriptionTextPaint, maxWidth, maxWidth, 0, 3);
+                    descriptionLayout = ChatMessageCell.generateStaticLayout(result.description, descriptionTextPaint, maxWidth, maxWidth, 0, 3, this, true);
                     if (descriptionLayout.getLineCount() > 0) {
                         linkY = descriptionY + descriptionLayout.getLineBottom(descriptionLayout.getLineCount() - 1) + AndroidUtilities.dp(1);
                     }

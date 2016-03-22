@@ -6,7 +6,13 @@
  * Copyright Nikolai Kudashov, 2013-2016.
  */
 
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
+
 package org.telegram.tgnet;
+
+import com.inmoji.sdk.InmojiTextUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -4684,6 +4690,16 @@ public class TLRPC {
 			}
 			return result;
 		}
+
+		/*
+		 * The following method has been added by Inmoji, Inc. to control webpage previewing of Inmoji content
+		 */
+		public boolean shouldRenderPreview() {
+            if(url != null && url.length() > 0) {
+                return !InmojiTextUtils.containsInmojiLink(url);
+			}
+            return false;
+        }
 	}
 
 	public static class TL_webPagePending extends WebPage {

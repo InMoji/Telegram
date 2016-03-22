@@ -6,6 +6,10 @@
  * Copyright Nikolai Kudashov, 2013-2016.
  */
 
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
+
 package org.telegram.ui;
 
 import android.annotation.TargetApi;
@@ -26,6 +30,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentActivity;
 import android.view.ActionMode;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -41,6 +46,9 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+
+import com.inmoji.sdk.InMojiSDK;
+import com.inmoji.sdk.InMojiSDKBase;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -78,7 +86,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class LaunchActivity extends Activity implements ActionBarLayout.ActionBarLayoutDelegate, NotificationCenter.NotificationCenterDelegate, DialogsActivity.MessagesActivityDelegate {
+public class LaunchActivity extends FragmentActivity implements ActionBarLayout.ActionBarLayoutDelegate, NotificationCenter.NotificationCenterDelegate, DialogsActivity.MessagesActivityDelegate {
 
     private boolean finished;
     private String videoPath;
@@ -144,6 +152,20 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
         getWindow().setBackgroundDrawableResource(R.drawable.transparent);
 
         super.onCreate(savedInstanceState);
+
+        // Pass as much demographic data as possible for the best integration
+        InMojiSDK.init(getApplicationContext(),
+                "NMGwefDS4bAitdZ4ILxzPpHccamWoqQkynyML3zu",
+                "Nbm72XlPWuNEv7q9WFVG1DsgNevvdCkFjr4WZEcgmSbQsXIHDjRSnPf0fvgec1wd6A2mR7vMMYdATije",
+                InMojiSDK.InmojiLaunchMode.senderReceiver,      //launch mode
+                null, null,                                     //overrides for country and language
+                false, 0, 0,                                    //overrides for location lat and lng
+                null,                                           //custom ImageLoader implementation or null (if null you must compile with the InMojiAndroidSDK.aar that includes our internal image loader)
+                new InMojiSDKBase.SDKTypeface("sans-serif"),    //override typeface used in internal SDK UI.
+                true,                                           // Debug
+                "FirstName", "LastName", "email@foo.com",
+                "555-555-5555", "userAccount123456", 21, "male",
+                "race", "employed", "50000", true, true);
 
         if (UserConfig.passcodeHash.length() != 0 && UserConfig.appLocked) {
             UserConfig.lastPauseTime = ConnectionsManager.getInstance().getCurrentTime();

@@ -5,7 +5,9 @@
  *
  * Copyright Nikolai Kudashov, 2013-2016.
  */
-
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
 package org.telegram.ui.Cells;
 
 import android.content.Context;
@@ -25,7 +27,10 @@ import android.text.style.ClickableSpan;
 import android.text.style.URLSpan;
 import android.view.MotionEvent;
 import android.view.SoundEffectConstants;
+import android.view.View;
 import android.view.ViewStructure;
+
+import com.inmoji.sdk.InmojiSpannableFactory;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ImageLoader;
@@ -534,10 +539,11 @@ public class ChatMessageCell extends ChatBaseCell {
         return left1 <= right2;
     }
 
-    public static StaticLayout generateStaticLayout(CharSequence text, TextPaint paint, int maxWidth, int smallWidth, int linesCount, int maxLines) {
+    public static StaticLayout generateStaticLayout(CharSequence text, TextPaint paint, int maxWidth, int smallWidth, int linesCount, int maxLines, View parentView, boolean animateable) {
         SpannableStringBuilder stringBuilder = new SpannableStringBuilder(text);
         int addedChars = 0;
-        StaticLayout layout = new StaticLayout(text, paint, smallWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+        InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(text, 30, parentView, animateable);
+        StaticLayout layout = new StaticLayout(inmojiSpannable, paint, smallWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
         for (int a = 0; a < linesCount; a++) {
             Layout.Directions directions = layout.getLineDirections(a);
             if (layout.getLineLeft(a) != 0 || Build.VERSION.SDK_INT >= 14 && (layout.isRtlCharAt(layout.getLineStart(a)) || layout.isRtlCharAt(layout.getLineEnd(a)))) {
@@ -558,7 +564,7 @@ public class ChatMessageCell extends ChatBaseCell {
                 break;
             }
         }
-        return StaticLayoutEx.createStaticLayout(stringBuilder, paint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, AndroidUtilities.dp(1), false, TextUtils.TruncateAt.END, maxWidth, maxLines);
+        return StaticLayoutEx.createStaticLayout(stringBuilder, paint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, AndroidUtilities.dp(1), false, TextUtils.TruncateAt.END, maxWidth, maxLines, parentView, animateable);
     }
 
     private void didClickedImage() {
@@ -643,7 +649,7 @@ public class ChatMessageCell extends ChatBaseCell {
 
     @Override
     protected boolean isUserDataChanged() {
-        if (!hasLinkPreview && currentMessageObject.messageOwner.media != null && currentMessageObject.messageOwner.media.webpage instanceof TLRPC.TL_webPage) {
+        if (!hasLinkPreview && currentMessageObject.messageOwner.media != null && currentMessageObject.messageOwner.media.webpage instanceof TLRPC.TL_webPage && currentMessageObject.messageOwner.media.webpage.shouldRenderPreview()) {
             return true;
         }
         //suppress warning
@@ -710,7 +716,7 @@ public class ChatMessageCell extends ChatBaseCell {
         }
     }
 
-    private int createDocumentLayout(int maxWidth, MessageObject messageObject) {
+    private int createDocumentLayout(int maxWidth, MessageObject messageObject, View parentView, boolean animatable) {
         TLRPC.Document document = null;
         if (messageObject.type == 9) {
             document = messageObject.messageOwner.media.document;
@@ -725,7 +731,7 @@ public class ChatMessageCell extends ChatBaseCell {
         if (name == null || name.length() == 0) {
             name = LocaleController.getString("AttachDocument", R.string.AttachDocument);
         }
-        captionLayout = StaticLayoutEx.createStaticLayout(name, namePaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false, TextUtils.TruncateAt.MIDDLE, maxWidth, 3);
+        captionLayout = StaticLayoutEx.createStaticLayout(name, namePaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false, TextUtils.TruncateAt.MIDDLE, maxWidth, 3, parentView, animatable);
         nameOffsetX = Integer.MIN_VALUE;
         int captionWidth;
         if (captionLayout != null && captionLayout.getLineCount() > 0) {
@@ -845,6 +851,17 @@ public class ChatMessageCell extends ChatBaseCell {
 
                 super.setMessageObject(messageObject);
 
+                if(currentMessageObject != null && currentMessageObject.textLayoutBlocks != null) {
+                    for (MessageObject.TextLayoutBlock block : currentMessageObject.textLayoutBlocks) {
+                        if (block.textLayout.getText() instanceof InmojiSpannableFactory.InmojiSpannable) {
+                            InmojiSpannableFactory.InmojiSpannable inmojiSpannable = (InmojiSpannableFactory.InmojiSpannable)block.textLayout.getText();
+                            inmojiSpannable.setParentView(this);
+                            inmojiSpannable.enableInmojiAnimations(true);
+                        }
+                    }
+                }
+
+
                 backgroundWidth = messageObject.textWidth;
                 totalHeight = messageObject.textHeight + AndroidUtilities.dp(19.5f) + namesOffset;
 
@@ -859,7 +876,8 @@ public class ChatMessageCell extends ChatBaseCell {
                     timeMore += AndroidUtilities.dp(20.5f);
                 }
 
-                if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && messageObject.messageOwner.media.webpage instanceof TLRPC.TL_webPage) {
+                if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && messageObject.messageOwner.media.webpage instanceof TLRPC.TL_webPage && currentMessageObject.messageOwner.media.webpage.shouldRenderPreview()) {
+
                     int linkPreviewMaxWidth;
                     if (AndroidUtilities.isTablet()) {
                         if (messageObject.isFromUser() && (currentMessageObject.messageOwner.to_id.channel_id != 0 || currentMessageObject.messageOwner.to_id.chat_id != 0) && !currentMessageObject.isOut()) {
@@ -923,10 +941,10 @@ public class ChatMessageCell extends ChatBaseCell {
                             }
                             int restLines = 0;
                             if (!isSmallImage || webPage.description == null) {
-                                titleLayout = StaticLayoutEx.createStaticLayout(webPage.title, replyNamePaint, linkPreviewMaxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, AndroidUtilities.dp(1), false, TextUtils.TruncateAt.END, linkPreviewMaxWidth, 4);
+                                titleLayout = StaticLayoutEx.createStaticLayout(webPage.title, replyNamePaint, linkPreviewMaxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, AndroidUtilities.dp(1), false, TextUtils.TruncateAt.END, linkPreviewMaxWidth, 4, this, true);
                             } else {
                                 restLines = restLinesCount;
-                                titleLayout = generateStaticLayout(webPage.title, replyNamePaint, linkPreviewMaxWidth, linkPreviewMaxWidth - AndroidUtilities.dp(48 + 2), restLinesCount, 4);
+                                titleLayout = generateStaticLayout(webPage.title, replyNamePaint, linkPreviewMaxWidth, linkPreviewMaxWidth - AndroidUtilities.dp(48 + 2), restLinesCount, 4, this, true);
                                 restLinesCount -= titleLayout.getLineCount();
                             }
                             int height = titleLayout.getLineBottom(titleLayout.getLineCount() - 1);
@@ -970,7 +988,7 @@ public class ChatMessageCell extends ChatBaseCell {
                             if (restLinesCount == 3 && (!isSmallImage || webPage.description == null)) {
                                 authorLayout = new StaticLayout(webPage.author, replyNamePaint, linkPreviewMaxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                             } else {
-                                authorLayout = generateStaticLayout(webPage.author, replyNamePaint, linkPreviewMaxWidth, linkPreviewMaxWidth - AndroidUtilities.dp(48 + 2), restLinesCount, 1);
+                                authorLayout = generateStaticLayout(webPage.author, replyNamePaint, linkPreviewMaxWidth, linkPreviewMaxWidth - AndroidUtilities.dp(48 + 2), restLinesCount, 1, this, true);
                                 restLinesCount -= authorLayout.getLineCount();
                             }
                             int height = authorLayout.getLineBottom(authorLayout.getLineCount() - 1);
@@ -1002,10 +1020,10 @@ public class ChatMessageCell extends ChatBaseCell {
                             }
                             int restLines = 0;
                             if (restLinesCount == 3 && !isSmallImage) {
-                                descriptionLayout = StaticLayoutEx.createStaticLayout(messageObject.linkDescription, replyTextPaint, linkPreviewMaxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, AndroidUtilities.dp(1), false, TextUtils.TruncateAt.END, linkPreviewMaxWidth, 6);
+                                descriptionLayout = StaticLayoutEx.createStaticLayout(messageObject.linkDescription, replyTextPaint, linkPreviewMaxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, AndroidUtilities.dp(1), false, TextUtils.TruncateAt.END, linkPreviewMaxWidth, 6, this, true);
                             } else {
                                 restLines = restLinesCount;
-                                descriptionLayout = generateStaticLayout(messageObject.linkDescription, replyTextPaint, linkPreviewMaxWidth, linkPreviewMaxWidth - AndroidUtilities.dp(48 + 2), restLinesCount, 6);
+                                descriptionLayout = generateStaticLayout(messageObject.linkDescription, replyTextPaint, linkPreviewMaxWidth, linkPreviewMaxWidth - AndroidUtilities.dp(48 + 2), restLinesCount, 6, this, true);
                             }
                             int height = descriptionLayout.getLineBottom(descriptionLayout.getLineCount() - 1);
                             linkPreviewHeight += height;
@@ -1098,7 +1116,7 @@ public class ChatMessageCell extends ChatBaseCell {
                                 if (backgroundWidth < maxWidth + AndroidUtilities.dp(20)) {
                                     backgroundWidth = maxWidth + AndroidUtilities.dp(20);
                                 }
-                                createDocumentLayout(backgroundWidth - AndroidUtilities.dp(86 + 24 + 58), messageObject);
+                                createDocumentLayout(backgroundWidth - AndroidUtilities.dp(86 + 24 + 58), messageObject, this, true);
                                 drawPhotoImage = true;
                                 drawImageButton = true;
                                 photoImage.setImageCoords(0, totalHeight + namesOffset, AndroidUtilities.dp(86), AndroidUtilities.dp(86));
@@ -1250,7 +1268,7 @@ public class ChatMessageCell extends ChatBaseCell {
                     if (checkNeedDrawShareButton(messageObject)) {
                         maxWidth -= AndroidUtilities.dp(20);
                     }
-                    int captionWidth = createDocumentLayout(maxWidth, messageObject);
+                    int captionWidth = createDocumentLayout(maxWidth, messageObject, this, true);
                     photoWidth = AndroidUtilities.dp(86);
                     photoHeight = AndroidUtilities.dp(86);
                     availableTimeWidth = Math.max(captionWidth, infoWidth) + AndroidUtilities.dp(37);
@@ -1261,10 +1279,10 @@ public class ChatMessageCell extends ChatBaseCell {
 
                     if (messageObject.messageOwner.media.title != null && messageObject.messageOwner.media.title.length() > 0) {
                         int maxWidth = (AndroidUtilities.isTablet() ? AndroidUtilities.getMinTabletSide() : Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y)) - AndroidUtilities.dp((isChat && !messageObject.isOutOwner() ? 102 : 40) + 86 + 24);
-                        captionLayout = StaticLayoutEx.createStaticLayout(messageObject.messageOwner.media.title, locationTitlePaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false, TextUtils.TruncateAt.END, maxWidth - AndroidUtilities.dp(4), 3);
+                        captionLayout = StaticLayoutEx.createStaticLayout(messageObject.messageOwner.media.title, locationTitlePaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false, TextUtils.TruncateAt.END, maxWidth - AndroidUtilities.dp(4), 3, this, true);
                         int lineCount = captionLayout.getLineCount();
                         if (messageObject.messageOwner.media.address != null && messageObject.messageOwner.media.address.length() > 0) {
-                            infoLayout = StaticLayoutEx.createStaticLayout(messageObject.messageOwner.media.address, locationAddressPaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false, TextUtils.TruncateAt.END, maxWidth - AndroidUtilities.dp(4), Math.min(3, 4 - lineCount));
+                            infoLayout = StaticLayoutEx.createStaticLayout(messageObject.messageOwner.media.address, locationAddressPaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false, TextUtils.TruncateAt.END, maxWidth - AndroidUtilities.dp(4), Math.min(3, 4 - lineCount), this, true);
                         } else {
                             infoLayout = null;
                         }

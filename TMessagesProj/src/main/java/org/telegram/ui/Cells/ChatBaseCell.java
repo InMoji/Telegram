@@ -5,6 +5,9 @@
  *
  * Copyright Nikolai Kudashov, 2013-2016.
  */
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
 
 package org.telegram.ui.Cells;
 
@@ -23,6 +26,8 @@ import android.text.TextUtils;
 import android.text.style.ClickableSpan;
 import android.view.MotionEvent;
 import android.view.SoundEffectConstants;
+
+import com.inmoji.sdk.InmojiSpannableFactory;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ContactsController;
@@ -519,7 +524,7 @@ public class ChatBaseCell extends BaseCell implements MediaController.FileDownlo
                 } else {
                     str = AndroidUtilities.replaceTags(String.format("%s\n%s <b>%s</b>", LocaleController.getString("ForwardedMessage", R.string.ForwardedMessage), LocaleController.getString("From", R.string.From), str));
                 }
-                forwardedNameLayout = StaticLayoutEx.createStaticLayout(str, forwardNamePaint, forwardedNameWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false, TextUtils.TruncateAt.END, forwardedNameWidth, 2);
+                forwardedNameLayout = StaticLayoutEx.createStaticLayout(str, forwardNamePaint, forwardedNameWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false, TextUtils.TruncateAt.END, forwardedNameWidth, 2, this ,true);
                 if (forwardedNameLayout.getLineCount() > 1) {
                     forwardedNameWidth = Math.max((int) Math.ceil(forwardedNameLayout.getLineWidth(0)), (int) Math.ceil(forwardedNameLayout.getLineWidth(1)));
                     namesOffset += AndroidUtilities.dp(36);
@@ -616,6 +621,7 @@ public class ChatBaseCell extends BaseCell implements MediaController.FileDownlo
                 }
                 if (messageObject.replyMessageObject.messageText != null && messageObject.replyMessageObject.messageText.length() > 0) {
                     String mess = messageObject.replyMessageObject.messageText.toString();
+//                    String mess = "Hello World!";
                     if (mess.length() > 150) {
                         mess = mess.substring(0, 150);
                     }
@@ -628,7 +634,8 @@ public class ChatBaseCell extends BaseCell implements MediaController.FileDownlo
                 stringFinalName = LocaleController.getString("Loading", R.string.Loading);
             }
             try {
-                replyNameLayout = new StaticLayout(stringFinalName, replyNamePaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+                InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(stringFinalName, 30, this, true);
+                replyNameLayout = new StaticLayout(inmojiSpannable, replyNamePaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                 if (replyNameLayout.getLineCount() > 0) {
                     replyNameWidth = (int)Math.ceil(replyNameLayout.getLineWidth(0)) + AndroidUtilities.dp(12 + (needReplyImage ? 44 : 0));
                     replyNameOffset = replyNameLayout.getLineLeft(0);
@@ -638,7 +645,8 @@ public class ChatBaseCell extends BaseCell implements MediaController.FileDownlo
             }
             try {
                 if (stringFinalText != null) {
-                    replyTextLayout = new StaticLayout(stringFinalText, replyTextPaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+                    InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(stringFinalText, 30, this, true);
+                    replyTextLayout = new StaticLayout(inmojiSpannable, replyTextPaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                     if (replyTextLayout.getLineCount() > 0) {
                         replyTextWidth = (int) Math.ceil(replyTextLayout.getLineWidth(0)) + AndroidUtilities.dp(12 + (needReplyImage ? 44 : 0));
                         replyTextOffset = replyTextLayout.getLineLeft(0);

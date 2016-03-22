@@ -5,7 +5,9 @@
  *
  * Copyright Nikolai Kudashov, 2013-2016.
  */
-
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
 package org.telegram.ui.Cells;
 
 import android.content.Context;
@@ -92,7 +94,7 @@ public class PhotoPickerSearchCell extends LinearLayout {
         searchButton.imageView.setImageResource(R.drawable.search_web);
         addView(searchButton);
         LayoutParams layoutParams = (LayoutParams) searchButton.getLayoutParams();
-        layoutParams.weight = 0.5f;
+        layoutParams.weight = 0.0f; //Modified by Inmoji to disable Bing search
         layoutParams.topMargin = AndroidUtilities.dp(4);
         layoutParams.height = AndroidUtilities.dp(48);
         layoutParams.width = 0;
@@ -121,7 +123,7 @@ public class PhotoPickerSearchCell extends LinearLayout {
         searchButton.imageView.setImageResource(R.drawable.search_gif);
         addView(searchButton);
         layoutParams = (LayoutParams) searchButton.getLayoutParams();
-        layoutParams.weight = 0.5f;
+        layoutParams.weight = 1.0f; //Modified by Inmoji to disable Bing search
         layoutParams.topMargin = AndroidUtilities.dp(4);
         layoutParams.height = AndroidUtilities.dp(48);
         layoutParams.width = 0;

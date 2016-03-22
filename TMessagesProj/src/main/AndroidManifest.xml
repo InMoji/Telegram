@@ -37,6 +37,10 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <!-- Begin Inmoj, Inc. Modification 3/22/2016 to support Inmoji sdk. Copyright Inmoji, Inc. 2016-->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- End Inmoji, Inc. Modification -->
 
     <application
         android:name=".ApplicationLoader"
@@ -191,6 +195,10 @@
         <service android:name=".ClearCacheService" android:exported="false"/>
         <service android:name=".VideoEncodingService" android:enabled="true"/>
         <service android:name=".MusicPlayerService" android:exported="true" android:enabled="true"/>
+
+        <!-- Begin Inmoji, Inc. Modification 3/22/2016 to support Inmoji sdk. Copyright Inmoji, Inc. 2016 -->
+        <service android:name="com.inmoji.sdk.ISVC_RestCallService" />
+        <!-- End Inmoji, Inc. Modification -->
 
         <receiver android:name=".MusicPlayerReceiver" >
             <intent-filter>

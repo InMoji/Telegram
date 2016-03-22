@@ -5,7 +5,9 @@
  *
  * Copyright Nikolai Kudashov, 2013-2016.
  */
-
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
 package org.telegram.ui.Cells;
 
 import android.content.Context;
@@ -18,6 +20,9 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.view.MotionEvent;
+
+import com.inmoji.sdk.InmojiSpannableFactory;
+import com.inmoji.sdk.InmojiTextUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -222,7 +227,15 @@ public class DialogCell extends BaseCell {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), AndroidUtilities.dp(72) + (useSeparator ? 1 : 0));
+        int dpHeight = 72;
+
+        if(message != null && messagePaint != null) {
+            CharSequence ellipsifiedText = getEllipsifiedMessageText(message.messageText, 200, messagePaint, false);
+            if(InmojiTextUtils.containsInmojiLink(ellipsifiedText)) {
+                dpHeight += 10;
+            }
+        }
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), AndroidUtilities.dp(dpHeight) + (useSeparator ? 1 : 0));
     }
 
     @Override
@@ -601,24 +614,21 @@ public class DialogCell extends BaseCell {
             drawCount = false;
         }
 
-        if (checkMessage) {
-            if (messageString == null) {
-                messageString = "";
-            }
-            String mess = messageString.toString();
-            if (mess.length() > 150) {
-                mess = mess.substring(0, 150);
-            }
-            mess = mess.replace("\n", " ");
-            messageString = Emoji.replaceEmoji(mess, messagePaint.getFontMetricsInt(), AndroidUtilities.dp(17), false);
+        if(InmojiTextUtils.containsInmojiLink(messageString)) {
+            messageWidth = Math.max(AndroidUtilities.dp(30), messageWidth);
         }
-        messageWidth = Math.max(AndroidUtilities.dp(12), messageWidth);
-        CharSequence messageStringFinal = TextUtils.ellipsize(messageString, currentMessagePaint, messageWidth - AndroidUtilities.dp(12), TextUtils.TruncateAt.END);
+        CharSequence ellipsifiedText = getEllipsifiedMessageText(messageString, messageWidth, currentMessagePaint, checkMessage);
         try {
-            messageLayout = new StaticLayout(messageStringFinal, currentMessagePaint, messageWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+            InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(ellipsifiedText, 30, this, false);
+            if(inmojiSpannable.containsInmoji) {
+                messageLayout = new StaticLayout(inmojiSpannable, currentMessagePaint, messageWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+            } else {
+                messageLayout = new StaticLayout(ellipsifiedText, currentMessagePaint, messageWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+            }
         } catch (Exception e) {
             FileLog.e("tmessages", e);
         }
+
 
         double widthpx;
         float left;
@@ -668,6 +678,29 @@ public class DialogCell extends BaseCell {
                     }
                 }
             }
+        }
+    }
+
+    protected CharSequence getEllipsifiedMessageText(CharSequence messageString, int messageWidth, TextPaint currentMessagePaint, boolean checkOriginal) {
+        InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(messageString, 30, null, false, true);
+        if(inmojiSpannable.containsInmoji) {
+            messageWidth = Math.max(AndroidUtilities.dp(30), messageWidth);
+            return TextUtils.ellipsize(inmojiSpannable, currentMessagePaint, messageWidth - AndroidUtilities.dp(12), TextUtils.TruncateAt.END);
+        } else {
+            if (checkOriginal) {
+                if (messageString == null) {
+                    messageString = "";
+                }
+                String mess = messageString.toString();
+                if (mess.length() > 150) {
+                    mess = mess.substring(0, 150);
+                }
+                mess = mess.replace("\n", " ");
+            /* Telegram-FOSS - Disable emoji replacement, falling back to native emojis. */
+                //messageString = Emoji.replaceEmoji(mess, messagePaint.getFontMetricsInt(), AndroidUtilities.dp(17), false);
+                messageString = mess;
+            }
+            return TextUtils.ellipsize(messageString, currentMessagePaint, messageWidth - AndroidUtilities.dp(12), TextUtils.TruncateAt.END);
         }
     }
 

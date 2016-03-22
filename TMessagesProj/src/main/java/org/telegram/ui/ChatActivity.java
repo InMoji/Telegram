@@ -6,6 +6,11 @@
  * Copyright Nikolai Kudashov, 2013-2016.
  */
 
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
+
+
 package org.telegram.ui;
 
 import android.Manifest;
@@ -51,6 +56,9 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.inmoji.sdk.InMojiSDK;
+import com.inmoji.sdk.InmojiTextUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -2815,6 +2823,16 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         return !(dialog == chatAttachViewSheet && PhotoViewer.getInstance().isVisible()) && super.dismissDialogOnPause(dialog);
     }
 
+    /*
+	 * The following method has been added by Inmoji, Inc. to control webpage previewing of Inmoji content
+	 */
+    protected boolean shouldResolveLink(CharSequence link) {
+        if(InmojiTextUtils.containsInmojiLink(link)) {
+            return false;
+        }
+        return true;
+    }
+
     private void searchLinks(final CharSequence charSequence, final boolean force) {
         if (currentEncryptedChat != null && (MessagesController.getInstance().secretWebpagePreview == 0 || AndroidUtilities.getPeerLayerVersion(currentEncryptedChat.layer) < 46)) {
             return;
@@ -2861,7 +2879,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         if (urls == null) {
                             urls = new ArrayList<>();
                         }
-                        urls.add(charSequence.subSequence(m.start(), m.end()));
+                        CharSequence urlSquence = charSequence.subSequence(m.start(), m.end());
+                        if(shouldResolveLink(urlSquence)) {
+                            urls.add(urlSquence);
+                        }
                     }
                     if (urls != null && foundUrls != null && urls.size() == foundUrls.size()) {
                         boolean clear = true;
@@ -4876,7 +4897,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         if (messagesDict[0].containsKey(obj.getId())) {
                             continue;
                         }
-                        if (currentEncryptedChat != null && obj.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && obj.messageOwner.media.webpage instanceof TLRPC.TL_webPageUrlPending) {
+                        if (currentEncryptedChat != null && obj.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && obj.messageOwner.media.webpage instanceof TLRPC.TL_webPageUrlPending && obj.messageOwner.media.webpage.shouldRenderPreview()) {
                             if (webpagesToReload == null) {
                                 webpagesToReload = new HashMap<>();
                             }
@@ -7672,7 +7693,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                     builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
                                     showDialog(builder.create());
                                 } else if (url instanceof URLSpan) {
-                                    AndroidUtilities.openUrl(getParentActivity(), urlFinal);
+                                    if(InmojiTextUtils.containsInmojiLink(urlFinal)) {
+                                        InMojiSDK.OpenInmojiReceiverViewByUrl(urlFinal, messageObject.messageText.toString(), getParentActivity());
+                                    } else {
+                                        AndroidUtilities.openUrl(getParentActivity(), urlFinal);
+                                    }
                                 } else {
                                     url.onClick(fragmentView);
                                 }

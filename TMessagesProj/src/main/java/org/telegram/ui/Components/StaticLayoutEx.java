@@ -5,7 +5,9 @@
  *
  * Copyright Nikolai Kudashov, 2013-2016.
  */
-
+/**
+ * This file has been modified by Inmoji, Inc. 3/22/2016 to support use of InmojiSpannable for text display with Inmoji content. Copyright Inmoji, Inc. 2016
+ */
 package org.telegram.ui.Components;
 
 import android.os.Build;
@@ -16,6 +18,9 @@ import android.text.TextDirectionHeuristic;
 import android.text.TextDirectionHeuristics;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.view.View;
+
+import com.inmoji.sdk.InmojiSpannableFactory;
 
 import org.telegram.messenger.FileLog;
 
@@ -74,11 +79,11 @@ public class StaticLayoutEx {
         }
     }
 
-    public static StaticLayout createStaticLayout(CharSequence source, TextPaint paint, int width, Layout.Alignment align, float spacingmult, float spacingadd, boolean includepad, TextUtils.TruncateAt ellipsize, int ellipsisWidth, int maxLines) {
-        return createStaticLayout(source, 0, source.length(), paint, width, align, spacingmult, spacingadd, includepad, ellipsize, ellipsisWidth, maxLines);
+    public static StaticLayout createStaticLayout(CharSequence source, TextPaint paint, int width, Layout.Alignment align, float spacingmult, float spacingadd, boolean includepad, TextUtils.TruncateAt ellipsize, int ellipsisWidth, int maxLines, View parentView, boolean animateable) {
+        return createStaticLayout(source, 0, source.length(), paint, width, align, spacingmult, spacingadd, includepad, ellipsize, ellipsisWidth, maxLines, parentView, animateable);
     }
 
-    public static StaticLayout createStaticLayout(CharSequence source, int bufstart, int bufend, TextPaint paint, int outerWidth, Layout.Alignment align, float spacingMult, float spacingAdd, boolean includePad, TextUtils.TruncateAt ellipsize, int ellipsisWidth, int maxLines) {
+    public static StaticLayout createStaticLayout(CharSequence source, int bufstart, int bufend, TextPaint paint, int outerWidth, Layout.Alignment align, float spacingMult, float spacingAdd, boolean includePad, TextUtils.TruncateAt ellipsize, int ellipsisWidth, int maxLines, View parentView, boolean animateable) {
         /*if (Build.VERSION.SDK_INT >= 14) {
             init();
             try {
@@ -103,9 +108,11 @@ public class StaticLayoutEx {
         try {
             if (maxLines == 1) {
                 CharSequence text = TextUtils.ellipsize(source, paint, ellipsisWidth, TextUtils.TruncateAt.END);
-                return new StaticLayout(text, 0, text.length(), paint, outerWidth, align, spacingMult, spacingAdd, includePad);
+                InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(text, 30, parentView, animateable);
+                return new StaticLayout(inmojiSpannable, 0, text.length(), paint, outerWidth, align, spacingMult, spacingAdd, includePad);
             } else {
-                StaticLayout layout = new StaticLayout(source, paint, outerWidth, align, spacingMult, spacingAdd, includePad);
+                InmojiSpannableFactory.InmojiSpannable inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(source, 30, parentView, animateable);
+                StaticLayout layout = new StaticLayout(inmojiSpannable, paint, outerWidth, align, spacingMult, spacingAdd, includePad);
                 if (layout.getLineCount() <= maxLines) {
                     return layout;
                 } else {
@@ -118,7 +125,8 @@ public class StaticLayoutEx {
                     }
                     SpannableStringBuilder stringBuilder = new SpannableStringBuilder(source.subSequence(0, Math.max(0, off - 1)));
                     stringBuilder.append("\u2026");
-                    return new StaticLayout(stringBuilder, paint, outerWidth, align, spacingMult, spacingAdd, includePad);
+                    inmojiSpannable = InmojiSpannableFactory.getInstance().newSpannable(stringBuilder, 30, parentView, animateable);
+                    return new StaticLayout(inmojiSpannable, paint, outerWidth, align, spacingMult, spacingAdd, includePad);
                 }
             }
         } catch (Exception e) {
