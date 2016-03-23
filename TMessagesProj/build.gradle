@@ -15,7 +15,7 @@ dependencies {
     compile fileTree(dir: 'libs', include: '*.jar')
     debugCompile(name: 'InMojiAndroidSDK-debug', ext: 'aar')
     releaseCompile(name: 'InMojiAndroidSDK-release', ext: 'aar')
-    compile 'com.android.support:recyclerview-v7:22.2.0'
+    compile 'com.android.support:recyclerview-v7:23.2.1'
     // End Inmoji Modification
 
     compile 'com.android.support:support-v4:23.2.1'

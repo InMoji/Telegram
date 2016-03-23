@@ -21,6 +21,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -54,6 +55,7 @@ import android.widget.Toast;
 
 import com.inmoji.sdk.InMojiEditText;
 import com.inmoji.sdk.InmojiSpannableFactory;
+import com.inmoji.sdk.InmojiViewUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationCompat.AnimatorListenerAdapterProxy;
@@ -526,8 +528,11 @@ public class ChatActivityEnterView extends FrameLayoutFixed implements Notificat
         messageEditText.setTextColor(0xff000000);
         messageEditText.setHintTextColor(0xffb2b2b2);
         Bitmap inmojiUnselected = BitmapFactory.decodeResource(getResources(), R.drawable.im_ic_empty);
+        int pxs = InmojiViewUtils.dpToPx(25);
+        inmojiUnselected = getResizedBitmap(inmojiUnselected, pxs, pxs);
         Bitmap inmojiSelected = BitmapFactory.decodeResource(getResources(), R.drawable.im_ic_stub);
-        messageEditText.SetButtonDrawables(new BitmapDrawable(inmojiUnselected), new BitmapDrawable(inmojiSelected));
+        inmojiSelected = getResizedBitmap(inmojiSelected, pxs, pxs);
+        messageEditText.SetButtonDrawables(new BitmapDrawable(getResources(), inmojiUnselected), new BitmapDrawable(getResources(), inmojiSelected));
         frameLayout.addView(messageEditText, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, 52, 0, isChat ? 50 : 2, 0));
         messageEditText.setOnKeyListener(new View.OnKeyListener() {
 
@@ -940,6 +945,21 @@ public class ChatActivityEnterView extends FrameLayoutFixed implements Notificat
         keyboardHeightLand = sharedPreferences.getInt("kbd_height_land3", AndroidUtilities.dp(200));
 
         checkSendButton(false);
+    }
+
+    static Bitmap getResizedBitmap(Bitmap bm, int newHeight, int newWidth) {
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // CREATE A MATRIX FOR THE MANIPULATION
+        Matrix matrix = new Matrix();
+        // RESIZE THE BIT MAP
+        matrix.postScale(scaleWidth, scaleHeight);
+
+        // "RECREATE" THE NEW BITMAP
+        Bitmap resizedBitmap = Bitmap.createBitmap(bm, 0, 0, width, height, matrix, false);
+        return resizedBitmap;
     }
 
     public void showContextProgress(boolean show) {
